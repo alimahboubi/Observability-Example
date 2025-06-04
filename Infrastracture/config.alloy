@@ -1,0 +1,41 @@
+otelcol.receiver.otlp "otlp_receiver" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    traces = [otelcol.exporter.otlp.tempoexporter.input]
+    logs = [otelcol.exporter.loki.lokiexporter.input]
+  }
+}
+
+otelcol.exporter.otlp "tempoexporter" {
+  client {
+    endpoint = "tempo-distributor:4317"
+    tls {
+			insecure = true
+		}
+  }
+}
+
+otelcol.exporter.otlp "lokiexporter" {
+  client {
+    endpoint = "loki-gateway:80/loki/api/v1/push"
+    tls {
+      insecure = true
+    }
+  }
+}
+
+otelcol.exporter.loki "lokiexporter" {
+  forward_to = [loki.write.lokiexporter.receiver]
+}
+
+loki.write "lokiexporter" {
+  endpoint {
+    url = "loki-gateway:80/loki/api/v1/push"
+  }
+}
