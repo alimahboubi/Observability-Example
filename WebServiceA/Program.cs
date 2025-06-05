@@ -23,6 +23,11 @@ builder.Services.AddOpenTelemetry().ConfigureResource(resourceBuilder => resourc
         providerBuilder.AddOtlpExporter(options => { options.Endpoint = new Uri("http://localhost:4317"); })
             .AddConsoleExporter();
     });
+builder.Logging.AddOpenTelemetry(options =>
+{
+    options.IncludeScopes = true;
+    options.IncludeFormattedMessage = true;
+});
 
 builder.Services.AddSingleton(TracerProvider.Default.GetTracer("WebServiceA", "1.0.0"));
 

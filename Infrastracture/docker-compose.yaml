@@ -139,6 +139,9 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+    depends_on:
+      - minio
+      - loki-init
 
   loki-write:
     image: *lokiImage
@@ -161,6 +164,9 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+    depends_on:
+      - minio
+      - loki-init
 
   loki-backend:
     image: *lokiImage
@@ -183,6 +189,9 @@ services:
     deploy:
       mode: replicated
       replicas: 3
+    depends_on:
+      - minio
+      - loki-init  
 
   minio:
     image: minio/minio:latest
@@ -194,8 +203,11 @@ services:
     entrypoint:
       - sh
       - -euc
-      - mkdir -p /data/tempo && minio server /data --console-address ':9001'
-      - mkdir -p /data/loki-data && mkdir -p /data/loki-ruler
+      - |
+        mkdir -p /data/tempo
+        mkdir -p /data/loki-data
+        mkdir -p /data/loki-ruler
+        minio server /data --console-address ':9001'
     networks:
       - observability
 
@@ -243,6 +255,8 @@ services:
       - "4319:4319" 
     networks:
       - observability
+    depends_on:
+      - loki-gateway
         
 networks:
   observability:
