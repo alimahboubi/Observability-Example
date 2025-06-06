@@ -7,11 +7,65 @@ otelcol.receiver.otlp "otlp_receiver" {
   }
 
   output {
+    traces = [otelcol.processor.batch.default.input]
+    logs = [otelcol.processor.batch.default.input]
+    metrics = [otelcol.processor.batch.default.input]  // Added metrics output
+  }
+}
+
+// Add a batch processor
+otelcol.processor.batch "default" {
+  output {
+    traces = [otelcol.processor.attributes.default.input]
+    logs = [otelcol.processor.attributes.default.input]
+    metrics = [otelcol.processor.attributes.metrics.input]  // Send metrics to a separate processor
+  }
+}
+
+// Original attributes processor for traces and logs
+otelcol.processor.attributes "default" {
+// Your existing trace and log attribute actions...
+
+  output {
     traces = [otelcol.exporter.otlp.tempoexporter.input]
     logs = [otelcol.exporter.loki.lokiexporter.input]
   }
 }
 
+// Add a new attributes processor specifically for metrics
+otelcol.processor.attributes "metrics" {
+// Add any metric-specific attribute transformations if needed
+  action {
+    key = "service_name"
+    from_attribute = "service.name"
+    action = "insert"
+  }
+
+  action {
+    key = "service_instance_id"
+    from_attribute = "service.instance.id"
+    action = "insert"
+  }
+
+  output {
+    metrics = [otelcol.exporter.prometheus.prometheusexporter.input]
+  }
+}
+
+// Add a Prometheus exporter
+otelcol.exporter.prometheus "prometheusexporter" {
+ forward_to = [prometheus.remote_write.default.receiver]
+}
+
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+
+// Your existing exporters
 otelcol.exporter.otlp "tempoexporter" {
   client {
     endpoint = "tempo-distributor:4317"

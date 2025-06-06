@@ -13,24 +13,46 @@ datasources:
     editable: true
     jsonData:
       httpMethod: GET
-
+      
   - name: Tempo
     type: tempo
+    uid: tempo
     access: proxy
-    orgId: 1
     url: http://tempo-query-frontend:3200
-    basicAuth: false
-    isDefault: true
+    isDefault: false
     version: 1
     editable: true
-    apiVersion: 1
-    uid: tempo
     jsonData:
-      httpMethod: GET
+      nodeGraph:
+        enabled: true
       serviceMap:
         datasourceUid: prometheus
+      tracesToLogsV2:
+        # Reference to Loki data source
+        datasourceUid: loki
+        spanStartTimeShift: -15m
+        spanEndTimeShift: 15m
+        tags:
+          - key: service.name
+            value: job
+          - key: service.instance.id
+            value: instance
+        filterByTraceID: true
+        filterBySpanID: true
+        customQuery: true
 
   - name: Loki
     type: loki
+    uid: loki
     access: proxy
     url: http://loki-gateway:3100
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"TraceId":\s*"([a-zA-Z0-9]+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+          urlDisplayLabel: 'View Trace'

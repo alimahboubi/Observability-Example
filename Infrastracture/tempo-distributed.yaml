@@ -41,6 +41,11 @@ metrics_generator:
         send_exemplars: true
   traces_storage:
     path: /var/tempo/generator/traces
+  processor:
+    service_graphs:
+      wait: 10s
+      max_items: 10000
+      workers: 10
 
 storage:
   trace:
